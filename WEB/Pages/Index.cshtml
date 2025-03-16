@@ -1,0 +1,97 @@
+﻿@page
+@model IndexModel
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Stuff Management</title>
+</head>
+<body>
+<h1>Stuff List</h1>
+<ul id="stuff-list"></ul>
+
+<h2>Add Stuff</h2>
+<input type="text" id="stuff-name" placeholder="Name">
+<input type="text" id="stuff-category" placeholder="Category">
+<button onclick="addStuff()">Add</button>
+
+<script>
+    async function loadStuffs() {
+        const response = await fetch('/api/stuffs');
+        const stuffs = await response.json();
+        const list = document.getElementById('stuff-list');
+        list.innerHTML = '';
+
+        stuffs.forEach(stuff => {
+            const li = document.createElement('li');
+            li.textContent = `${stuff.name} (${stuff.category}) `;
+
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Delete';
+            deleteButton.onclick = () => deleteStuff(stuff.id);
+            li.appendChild(deleteButton);
+
+            const changeButton = document.createElement('button');
+            changeButton.textContent = 'Change';
+            changeButton.onclick = () => showEditForm(stuff);
+            li.appendChild(changeButton);
+
+            list.appendChild(li);
+        });
+    }
+    async function addStuff() {
+        const name = document.getElementById('stuff-name').value;
+        const category = document.getElementById('stuff-category').value;
+        await fetch('/api/stuffs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, category })
+        });
+        loadStuffs();
+    }
+    async function deleteStuff(id) {
+        await fetch(`/api/stuffs/${id}`, { method: 'DELETE' });
+        loadStuffs();
+    }
+    function showEditForm(stuff) {
+        const list = document.getElementById('stuff-list');
+        list.innerHTML = ''; 
+
+        const li = document.createElement('li');
+
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.value = stuff.name;
+
+        const categoryInput = document.createElement('input');
+        categoryInput.type = 'text';
+        categoryInput.value = stuff.category;
+        const saveButton = document.createElement('button');
+        saveButton.textContent = 'Save';
+        saveButton.onclick = () => updateStuff(stuff.id, nameInput.value, categoryInput.value);
+
+        const cancelButton = document.createElement('button');
+        cancelButton.textContent = 'Cancel';
+        cancelButton.onclick = loadStuffs;
+
+        li.appendChild(nameInput);
+        li.appendChild(categoryInput);
+        li.appendChild(saveButton);
+        li.appendChild(cancelButton);
+
+        list.appendChild(li);
+    }
+
+    async function updateStuff(id, name, category) {
+        await fetch('/api/stuffs', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, name, category })
+        });
+        loadStuffs(); 
+    }
+
+    loadStuffs(); 
+</script>
+</body>
+</html>
